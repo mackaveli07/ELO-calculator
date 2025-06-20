@@ -80,7 +80,7 @@ if not st.session_state.elo_initialized:
     st.info("Calculating initial Elo ratings from historical games...")
     update_elo_with_results(historical_games)
     st.session_state.elo_initialized = True
-    st.experimental_rerun()
+    
 
 if tab == "Power Rankings":
     st.subheader("Current Power Rankings")
