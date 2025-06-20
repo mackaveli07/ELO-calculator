@@ -4,7 +4,7 @@ from ELO import EloRating
 
 @st.cache_data(show_spinner=True)
 def init_elo_ratings(games_df):
-    elo = EloRating()
+   ELO = EloRating()
     for _, game in games_df.iterrows():
         home = game["Home Team"]
         away = game["Away Team"]
@@ -21,15 +21,15 @@ def init_elo_ratings(games_df):
         else:
             result = 0.5
 
-        elo.update_ratings(home, away, result)
-    return elo
+        ELO.update_ratings(home, away, result)
+    return ELO
 
 def forecast_win_probs(elo, upcoming_games):
     forecasts = []
     for _, game in upcoming_games.iterrows():
         home = game["Home Team"]
         away = game["Away Team"]
-        prob = elo.win_probability(home, away)
+        prob = ELO.win_probability(home, away)
         forecasts.append({
             "Home Team": home,
             "Away Team": away,
