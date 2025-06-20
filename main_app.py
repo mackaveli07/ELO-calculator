@@ -73,14 +73,22 @@ st.sidebar.header("Controls")
 
 tab = st.sidebar.radio("Select View", ["Power Rankings", "Input Game Results", "Forecast Upcoming Games", "Betting Edges"])
 
+# Initialize session state flags
 if "elo_initialized" not in st.session_state:
     st.session_state.elo_initialized = False
+if "experimental_rerun_needed" not in st.session_state:
+    st.session_state.experimental_rerun_needed = False
 
+# Elo initialization block without experimental_rerun()
 if not st.session_state.elo_initialized:
     st.info("Calculating initial Elo ratings from historical games...")
     update_elo_with_results(historical_games)
     st.session_state.elo_initialized = True
-    
+    st.session_state.experimental_rerun_needed = True
+
+if st.session_state.experimental_rerun_needed:
+    st.session_state.experimental_rerun_needed = False
+    st.stop()
 
 if tab == "Power Rankings":
     st.subheader("Current Power Rankings")
