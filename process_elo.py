@@ -1,6 +1,6 @@
 import csv
 import json
-from elo import EloRating
+from ELO import EloRating
 from datetime import datetime
 
 def process_elo_from_csv(input_csv_path, league_name, output_json_path=None, output_csv_path=None):
