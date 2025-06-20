@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from elo import EloRating
+from ELO import EloRating
 
 @st.cache_data(show_spinner=True)
 def init_elo_ratings(games_df):
