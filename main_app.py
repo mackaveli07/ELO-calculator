@@ -1,12 +1,11 @@
 import streamlit as st
-from process_elo import process_elo_from_csv
-from ELO import EloRating
 import pandas as pd
+from elo import EloRating
 
-elo = EloRating()
-
-def update_elo_with_results(games):
-    for _, game in games.iterrows():
+@st.cache_data(show_spinner=True)
+def init_elo_ratings(games_df):
+    elo = EloRating()
+    for _, game in games_df.iterrows():
         home = game["Home Team"]
         away = game["Away Team"]
         home_score = game["Home Score"]
@@ -23,8 +22,9 @@ def update_elo_with_results(games):
             result = 0.5
 
         elo.update_ratings(home, away, result)
+    return elo
 
-def forecast_win_probs(upcoming_games):
+def forecast_win_probs(elo, upcoming_games):
     forecasts = []
     for _, game in upcoming_games.iterrows():
         home = game["Home Team"]
@@ -64,31 +64,15 @@ st.title("MLB Elo Ratings Live Dashboard")
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("historical_mlb_games_3seasons.csv")
-    return df
+    return pd.read_csv("historical_mlb_games_3seasons.csv")
 
 historical_games = load_data()
 
+# Initialize Elo ratings once, cached
+elo = init_elo_ratings(historical_games)
+
 st.sidebar.header("Controls")
-
 tab = st.sidebar.radio("Select View", ["Power Rankings", "Input Game Results", "Forecast Upcoming Games", "Betting Edges"])
-
-# Initialize session state flags
-if "elo_initialized" not in st.session_state:
-    st.session_state.elo_initialized = False
-if "experimental_rerun_needed" not in st.session_state:
-    st.session_state.experimental_rerun_needed = False
-
-# Elo initialization block without experimental_rerun()
-if not st.session_state.elo_initialized:
-    st.info("Calculating initial Elo ratings from historical games...")
-    update_elo_with_results(historical_games)
-    st.session_state.elo_initialized = True
-    st.session_state.experimental_rerun_needed = True
-
-if st.session_state.experimental_rerun_needed:
-    st.session_state.experimental_rerun_needed = False
-    st.stop()
 
 if tab == "Power Rankings":
     st.subheader("Current Power Rankings")
@@ -129,7 +113,7 @@ elif tab == "Forecast Upcoming Games":
         if upcoming_df.empty:
             st.warning("Enter at least one upcoming game with both teams.")
         else:
-            forecasts_df = forecast_win_probs(upcoming_df)
+            forecasts_df = forecast_win_probs(elo, upcoming_df)
             st.dataframe(forecasts_df.style.format({"Elo Home Win Prob": "{:.2%}"}))
 
 elif tab == "Betting Edges":
@@ -159,7 +143,7 @@ elif tab == "Betting Edges":
             st.warning("Enter valid betting odds data.")
         else:
             upcoming_games = betting_df[["Home Team", "Away Team"]]
-            forecasts_df = forecast_win_probs(upcoming_games)
+            forecasts_df = forecast_win_probs(elo, upcoming_games)
             edges_df = calculate_betting_edges(forecasts_df, betting_df)
             if edges_df.empty:
                 st.info("No matching games found between Elo forecasts and betting odds.")
